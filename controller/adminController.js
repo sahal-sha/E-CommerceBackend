@@ -1,7 +1,6 @@
 const mongoose=require("mongoose")
 const jwt=require("jsonwebtoken")
-const Users=require("../models/UsersSchema");
-const UsersSchema = require("../models/UsersSchema");
+const Users=require("../models/UsersSchema")
 const {joiProductSchema}=require("../models/validationSchema")
 const products=require("../models/ProductSchema")
 
@@ -21,7 +20,7 @@ module.exports= {
             return res.status(200).send({
                 status:"success",
                 message:"Admin registration successful",
-                data:token
+                token:token
             })
         }else{
             return res.status(404).json({
@@ -33,7 +32,7 @@ module.exports= {
      //to find all user
 
      allUser:async(req,res)=>{
-        const allUser=await UsersSchema.find()
+        const allUser=await Users.find()
 
         if(allUser.length===0){
             return res.status.json({
@@ -59,13 +58,13 @@ module.exports= {
 
 
         if(!user){
-            return status(404).json({
+            return res.status(404).json({
                 status:"error",
                 message:"users not found"
-            })
+            });
         }
 
-        res.status(202).send({
+        res.status(200).send({
             status:"success",
             message:"successfully find user",
             data:user,
@@ -79,7 +78,7 @@ module.exports= {
 
      createProduct:async(req,res)=>{
         const {value,error}=joiProductSchema.validate(req.body);
-        const {title,description,price,Image,category}=value;
+        const {title,description,price,image,category}=value;
         console.log(value);
         if(error){
             return res.status(400).json({error:error.details[0].message});
@@ -89,7 +88,7 @@ module.exports= {
                 title,
                 description,
                 price,
-                Image,
+                image,
                 category,
 
 
@@ -107,11 +106,72 @@ module.exports= {
 
      //view all products with category
 
+     allProduct:async(req,res)=>{
+        console.log("....");
+        const prods = await products.find()
+        console.log(prods);
+        if(!prods){
+            return(
+                res.status(404),
+                send({
+                    status:"error",
+                    message:"products not found"
+                })
+            )
+        }
+        res.status(200).json({
+            status:"success",
+            message:"successfully fetched the products details ",
+            data:prods,
+        })
+     },
+
+     productById:async(req,res)=>{
+        const productId=req.params.id;
+        const product=await products.findById(productId)
+        if(!product){
+            return res.status(404).json({
+                status:"error",
+                message:"product not found"
+            });
+        }
+        res.status(200).json({
+            status:"success",
+            message:"successfully fetched the products details",
+            data:product
+        });
+     },
+
+     deleteProduct:async(req,res)=>{
+        const {productId}=req.body
+        if(!productId||!mongoose.Types.ObjectId.isValid(productId)){
+            return res.status(400).json({
+                status:"failure",
+                message:"invalid product id provided"
+            });
+        }
+
+        const deletedProduct = await products.findOneAndDelete({_id:productId});
 
 
+        if(!deletedProduct){
+            return res.status(404).json({
+                status:"failure",
+                message:"product not found in the database"
+            });
+        }
+        return res.status(200).json({
+            status:"success",
+            message:"deleted successfully"
+        });
 
 
-     
+     },
+
+     //update product
+
+     updateProduct
+
 }
 
 

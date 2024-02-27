@@ -162,7 +162,7 @@ module.exports={
             })
         }
 
-        const cartProducts=await products.find({_id:{$in:cartProductsId}});
+        const cartProducts=await products.find({_id:{$in:cartProductId}});
         res.status(200).json({
             status:"success",
             message:"Cart products fetched successfully",

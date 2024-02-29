@@ -10,7 +10,7 @@ const joiUserSchema=Joi.object({
 
 
 const joiProductSchema=Joi.object({
-
+    id:Joi.string(),
     title:Joi.string().required(),
     description:Joi.string(),
     price:Joi.number().positive(),

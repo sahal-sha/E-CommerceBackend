@@ -9,7 +9,7 @@ const userRouter=require("./routes/userRouter")
 
 
 
-// const mongodb="mongodb://localhost:/ecommerce";
+
 
 
 main().catch((err)=>{

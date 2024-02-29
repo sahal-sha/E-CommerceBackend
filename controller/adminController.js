@@ -107,9 +107,8 @@ module.exports= {
      //view all products with category
 
      allProduct:async(req,res)=>{
-        console.log("....");
         const prods = await products.find()
-        console.log(prods);
+        
         if(!prods){
             return(
                 res.status(404),
@@ -144,7 +143,7 @@ module.exports= {
 
      deleteProduct:async(req,res)=>{
         const {productId}=req.body
-        if(!productId||!mongoose.Types.ObjectId.isValid(productId)){
+        if(!mongoose.Types.ObjectId.isValid(productId)){
             return res.status(400).json({
                 status:"failure",
                 message:"invalid product id provided"
@@ -170,7 +169,37 @@ module.exports= {
 
      //update product
 
-     updateProduct
+     updateProduct:async(req,res)=>{
+        try{
+            const {value,error} = joiProductSchema.validate(req.body);
+            const {id,title,description,price,image,category} = value;
+            if(error){
+                return res.status(401).json({status:"error",message:error.details[0].message});
+            }
+            const updatedProduct = await products.findByIdAndUpdate(
+                id,
+                {$set:{title,description,price,image,category}},
+                {new:true}//this option returns the modified document rather than the orginal
+            );
+            console.log(updatedProduct)
+            
+
+          if (updatedProduct) {
+            const updatedProduct = await products.findById(id);
+            return res.status(200).json({
+                status:"success",
+                message:"successfully updated the product",
+                data:updatedProduct,
+            })
+
+          }else{
+            return res.status(404).json({status:"error", message:"product not found"})
+          }
+        }catch(error){
+            console.error("error updating product",error);
+            return res.status(500).json({status:"error",message:"internal server Error"});
+        }
+    },
 
 }
 

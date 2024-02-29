@@ -13,6 +13,10 @@ router
 .get("/products/:id",tryCatchMiddleware(userController.productById))
 .post("/addCart/:id",tryCatchMiddleware(userController.addToCart))
 .get("/viewCart/:id",tryCatchMiddleware(userController.viewCartProduct))
+.post("/addtowishlist/:id",tryCatchMiddleware(userController.addwishlist))
+.get("/showwishlist/:id",tryCatchMiddleware(userController.showWishlist))
+.delete("/deletewishlist/:id",tryCatchMiddleware(userController.delete))
+
 
 
 module.exports=router

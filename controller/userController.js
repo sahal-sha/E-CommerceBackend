@@ -5,6 +5,9 @@ const jwt=require("jsonwebtoken")
 const products=require("../models/ProductSchema");
 const {default: mongoose } = require("mongoose");
 const stripe=require("stripe")(process.env.stripe_secret);
+const Order = require("../models/orderSchema");
+
+
 
 let sValue=[];
 
@@ -142,6 +145,40 @@ module.exports={
             message:"successfully product was added to cart"
         });
      },
+
+     // delete cart
+
+    removeCartProduct : async(req,res)=>{
+        const userId = req.params.id
+        const itemId = req.params.itemId
+        
+        if(!itemId){
+            return res.status(404).json({message:"Product not found"})
+        }
+        const user = await User.findById(userId)
+        
+        if(!user){
+            res.status(404).json({message:"user not found"})
+        }
+        const result = await User.updateOne(
+            {_id: userId},
+            {$pull:{cart:itemId}}
+        );
+        
+        if(result.modifiedCount >0){
+            console.log("item removed successfully");
+            res.status(200).json({message:"Product removed successfully",data: result})
+        }else{
+            console.log("Item not found in the cart");
+        }
+     },
+
+
+
+
+
+
+
      //cart view
 
      viewCartProduct:async(req,res)=>{
@@ -185,7 +222,7 @@ module.exports={
         if(!userId){
             return res.status(404).json({
                 status:"failure",
-                message:"User not found"
+                message:"User not found"  
             })
         }
 
@@ -280,6 +317,8 @@ module.exports={
         const userId = req.params.id;
         const user = await User.findOne({_id: userId}).populate("cart");
 
+        // console.log(user,'hello');
+
         if(!user){
             return res.status(404).json({
                 status:"failed",
@@ -308,12 +347,14 @@ module.exports={
                 },
                 quantity:1,
             }
+           
         });
+        
         session = await stripe.checkout.sessions.create({
             payment_method_types : ["card"],
             line_items: lineItems,
             mode:"payment",
-            success_url:"",
+            success_url:"http://localhost:3001/api/user/payment",
         })
 
         if(!session){
@@ -322,12 +363,17 @@ module.exports={
                 message:"Error occured on session side",
             });
         }
-        sValue={
+        // sValue.push(
+        //     userId,
+        //     user,
+        //     session,
+        // )
+
+        sValue = {
             userId,
             user,
-            session,
-        };
-
+            session
+        }
         res.status(200).json({
             status:"Success",
             message:"Strip payment session created",
@@ -338,11 +384,93 @@ module.exports={
 
     },
 
+    success:async(req,res)=>{
+        const { userId,user,session} = sValue
+        
+    console.log(sValue,'hiii');
+    console.log(user)
+        // const userid =  userId;
+        
+
+        const cartItems = user.cart;
+    console.log(cartItems)
+        
+
+         
+      const orders = await Order.create({
+        userId: userId,
+        products:cartItems.map((value)=> new mongoose.Types.ObjectId(value._id),
+        ),
+        order_id: session.id,
+        payment_id: `demo ${Date.now()}`,
+        total_amount: session.amount_total / 100,
+      }); 
+
+      if(!orders){
+        return res.json({ status:"failure",message:"Error occured while inputting to order DB"})
+      }
+
+      const orderId = orders._id; 
+
+      const userUpdate = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+            $push: { orders: orderId },
+            $set: { cart: [] }
+        },
+        { new: true }
+    )
+
+      console.log(userUpdate);
+
+       if(userUpdate){
+         res.status(200).json({
+            status:"success",
+            message:"payment successful"
+        
+         });
+       }else{
+        res.status(500).json({
+            status:"error",
+            message:"Failed to update user data",
+        });
+       }
+    
+    },
+
+    orderDetails: async(req,res)=>{
+        const userId = req.params.id;
+
+        const user = await User.findById(userId).populate("orders");
+
+        if(!user){
+            return res.status(404).json({
+                status:"failed",
+                message:"user not found",
+            });
+        }
+        const orderProducts = user.orders;
+
+        if(orderProducts.length===0){
+            return res.status(200).json({
+                message:"you don't have any product orders",
+                data:[],
+            })
+        }
+        const orderWithProducts = await Order.find({_id:{$in:orderProducts}}).populate("products");
+
+        res.status(200).json({
+            message:"ordered Products Details found",
+            data:orderWithProducts
+        });
+    },
+
+
     
 
 
 
 
-}
+ }
 
 

@@ -8,8 +8,10 @@ const userSchema=new mongoos.Schema({
     password:String,
 
     cart: [{type:mongoos.Schema.ObjectId,ref:'Product',autopopulate:true}],
-    wishlist:[{type:mongoos.Schema.ObjectId,ref:'Product'}]
+    wishlist:[{type:mongoos.Schema.ObjectId,ref:'Product'}],
+    orders: [{type:mongoos.Schema.ObjectId,ref:'orders'}]
 
+ 
 })
 
 module.exports=mongoos.model("user",userSchema)
